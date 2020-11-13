@@ -9,10 +9,10 @@
  * 
  * The required Javascript uplink Decode and downlink Encode functions are  
  * included in comment at the end of the sketch. You will need to copy and 
- * paste into Chirpstack (or TTN, whatever).
+ * paste functions into Chirpstack codec section (or TTN, whatever).
  * 
- * Written for and tested with Chirpstack, will work with minimal changes to the
- * function names and signature on TTN or some other network 
+ * Written for and tested with Chirpstack, should work on TTN (or some other 
+ * network) with minimal changes to the javascript function names and signature
  * 
  * Tested with: 
  *  1.3.0 (Modified - SPI transaction mod)
@@ -30,10 +30,11 @@
 #include <extEEPROM.h>
 
 
-#define SERIAL_DEBUG
+//#define SERIAL_DEBUG
 
 #define MIN_INTERVAL        10     //Minimum sleep/transmit interval
 #define MAX_INTERVAL        3600   //Maximum sleep/transmit interval
+#define DEFAULT_INTERVAL    30     //Interval we start at
 
 #define EUI64_I2C_ADDR      0x50   //Not currently used, but left here for reference
 #define EUI64_MAC_ADDR      0xF8
@@ -43,14 +44,15 @@
 //#define DLCMD_OTHERCMD      2
 
 
-// OTAA credentials
-char devEui[16];  //Will fill this with EUI from 24AA025E64 chip
-const char *appEui = "0000000000000000"; //Chirpstack doesnt use this
-const char *appKey = "93aa30ad90364fa818d311e7d88e9aef"; 
+//// OTAA credentials /////////////////////////////
+char devEui[16];  //WE will fill this with EUI from 24AA025E64 chip
+/**************** YOU NEED TO SET THESE! *********/
+const char *appEui = "0000000000000000"; //Chirpstack doesnt use this, but need to change for TTN
+const char *appKey = "00000000000000000000000000000000"; //<- You need to change this
 
 
 //Tx/sleep timing
-uint16_t sleepInterval = 60; 
+uint16_t sleepInterval = DEFAULT_INTERVAL; 
 uint8_t nextAlarmSec;
 uint8_t nextAlarmMin;
 
@@ -128,7 +130,11 @@ void setup() {
   nextAlarmMin = rtc.getMinutes();
 
 
-  //Initialize the AD7794
+  // Initialize the AD7794
+  // Setup for bridge type sensors (e.g. load cell or pressure gauge)
+  // Set update rate to 19.6, 90 dB noise rejection at 60 Hz
+  // Set bipolar mode
+  // Set set all channels to a gain of 128
   adc.begin();
   adc.setUpdateRate(16.6); //< Slow, but 16.6Hz rate enables 50/60hz noise rejection
   for(int i=0; i < 6; i++){
@@ -280,8 +286,7 @@ void loop() {
     Serial.println(F("Good morning!"));
   #else
     RFM_Sleep();
-    //rtc.standbyMode(); 
-    goToSleep();
+    rtc.standbyMode();     
   #endif
   
   digitalWrite(LED_BUILTIN,HIGH); //Waste of power, but this is just an example 
@@ -364,35 +369,11 @@ void parseDownlink(char * buf){
 }
 
 
-// Trusted sleep code. You could also just use rtc.standbyMode(), but in the past it
-// would cause lockups due to not disabling SysTick. I believe that has been fixed 
-// but since sleep is so critical, I like to use this explicit block of code. 
-void goToSleep(){
-  
-  USBDevice.detach();
-
-  //Microchip recomended code to disable SysTick interupt first
-  SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;
-
-  //Go to sleep
-  SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
-  __DSB();
-  __WFI();
-  //Code starts here after waking
-
-  //Reenable systick interrupt
-  SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk;
-  
-  //USBDevice.init();
-  USBDevice.attach(); 
-  
-}
-
 // The Beelan-LoRaWAN libray doesn't have a method to put the radio to sleep
 // so we'll do it manually
 void RFM_Sleep(){
 
-    //Borrowed from RadioHead library
+    //Borrowed from the RadioHead library
     const uint8_t RH_RF95_MODE_SLEEP      = 0x00;
     const uint8_t RH_RF95_REG_01_OP_MODE  = 0x01;
     const uint8_t RH_SPI_WRITE_MASK       = 0x80;
@@ -410,9 +391,25 @@ void RFM_Sleep(){
 }
 
 
-// Return the battery voltage
+//Return the bus voltage. This would normally be pretty inaccurate due to  
+//the high source impedance of the 1Meg voltage divider. Increasing the 
+//sampling period really helps, but means it takes significantly longer
+//to get the reading. (1M resitors used to keep current down)
 float getBusVoltage(){
-  return ((analogRead(BUS_V_PIN) * 3.3) / 4096) *2;
+  
+  //Increase the sample period to increase allowable
+  //source impedance
+  REG_ADC_SAMPCTRL = ADC_SAMPCTRL_SAMPLEN(32);
+  while (ADC->STATUS.bit.SYNCBUSY == 1);
+
+  //Take the reading
+  float val = ((analogRead(BUS_V_PIN) * 3.3) / 4096) *2;
+
+  //Now put it back to reset value
+  REG_ADC_SAMPCTRL = ADC_SAMPCTRL_SAMPLEN(0);
+  while (ADC->STATUS.bit.SYNCBUSY == 1);
+
+  return val;
 }
 
 // RTC Alarm Match ISR
@@ -431,7 +428,8 @@ Based on https://stackoverflow.com/a/37471538 by Ilya Bursov
 ************************************************************************************
 
 
-// Helper that converts incoming raw byte back to floats 
+
+//// Helper that converts incoming raw byte back to floats /////////////////////////////////////
 
 function bytesToFloat(bytes) {
   // JavaScript bitwise operators yield a 32 bits integer, not a float.
@@ -443,15 +441,17 @@ function bytesToFloat(bytes) {
   var f = sign * m * Math.pow(2, e - 150);
   return f;
   
-  //The “bias” value, which is documented 5 to be 127 for 32 bits single-precision IEEE-754 floating point, has been replaced
-  //by 150 in m * Math.pow(2, e - 150). This is effectively m × 2-23 × 2e-127 a.k.a. (m / 223) × 2e-127, and is a nice optimization
-  //to get the 24th implicit leading bit in the “mantissa”.
+  // The “bias” value, which is documented 5 to be 127 for 32 bits single-precision 
+  // IEEE-754 floating point, has been replaced by 150 in m * Math.pow(2, e - 150). 
+  // This is effectively m × 2-23 × 2e-127 a.k.a. (m / 223) × 2e-127, and is a nice 
+  // optimization to get the 24th implicit leading bit in the “mantissa”.
 }  
 
 
-// Decode for Battery, temparature and 6 AIN channels from AD7794 
-// !!! Use Decoder(bytes, port) for The Things Network
 
+////  Decode for Battery, temparature and 6 AIN channels from AD7794 //////////////////////////
+
+// !!! Use Decoder(bytes, port) for The Things Network
 function Decode(fPort, bytes){
   var payloadObj = {"BattVoltage":"",
                     "Temperature":"",
@@ -477,7 +477,8 @@ function Decode(fPort, bytes){
 }
 
 
-// Javascript Encode function for sending a 1 byte command with a single uint16 argument 
+
+//// Javascript Encode function for sending a 1 byte command with a single uint16 arg ////////
 
 function Encode(fPort, obj) {
   var bytes = [];

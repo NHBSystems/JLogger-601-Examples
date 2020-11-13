@@ -1,4 +1,4 @@
 {
     "board": "JLogger 601:samd:jlogger_601",
-    "sketch": "JLogger_601_Test_All\\JLogger_601_Test_All.ino"
+    "sketch": "examples\\JLogger-601_LoRaWan_Example-LMIC\\JLogger-601_LoRaWan_Example-LMIC.ino"
 }
