@@ -403,7 +403,7 @@ float getBusVoltage(){
   while (ADC->STATUS.bit.SYNCBUSY == 1);
 
   //Take the reading
-  float val = ((analogRead(BUS_V_PIN) * 3.3) / 4096) *2;
+  float val = ((analogRead(PIN_BUS_V) * 3.3) / 4096) *2;
 
   //Now put it back to reset value
   REG_ADC_SAMPCTRL = ADC_SAMPCTRL_SAMPLEN(0);

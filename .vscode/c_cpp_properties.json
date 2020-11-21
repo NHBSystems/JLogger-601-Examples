@@ -3,10 +3,12 @@
         {
             "name": "Win32",
             "includePath": [
-                "C:\\Users\\jjuli\\AppData\\Local\\Arduino15\\packages\\JLogger 601\\hardware\\samd\\1.0.2\\**"
+                "C:\\Users\\jjuli\\AppData\\Local\\Arduino15\\packages\\JLogger 601\\hardware\\samd\\1.0.2\\**",
+                "C:\\Users\\jjuli\\AppData\\Local\\Arduino15\\packages\\JLogger 601\\hardware\\samd\\1.1.0\\**"
             ],
             "forcedInclude": [
-                "C:\\Users\\jjuli\\AppData\\Local\\Arduino15\\packages\\JLogger 601\\hardware\\samd\\1.0.2\\cores\\arduino\\Arduino.h"
+                "C:\\Users\\jjuli\\AppData\\Local\\Arduino15\\packages\\JLogger 601\\hardware\\samd\\1.0.2\\cores\\arduino\\Arduino.h",
+                "C:\\Users\\jjuli\\AppData\\Local\\Arduino15\\packages\\JLogger 601\\hardware\\samd\\1.1.0\\cores\\arduino\\Arduino.h"
             ],
             "intelliSenseMode": "msvc-x64"
         }

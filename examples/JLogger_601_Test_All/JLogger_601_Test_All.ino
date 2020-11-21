@@ -22,12 +22,6 @@
 
 #define HAS_24AA025E64_CHIP     // Included on all boards now
 
-//#define HAS_ATECC608A         // Currently unsuported
-
-//#define TEST_RADIOHEAD        // Not implemented
-
-//#define TEST_LORAWAN          // Not implemented
-
 #define TEST_FLASH  
 #define TEST_LEDS
 #define TEST_SW3V
@@ -60,15 +54,16 @@
 #ifdef HAS_RFM69_RADIO
   #include <RH_RF69.h>
 #endif
-  
-
-#include <FRAM_MB85RC_I2C.h> 
+   
 
 #ifdef HAS_24AA025E64_CHIP
   //#include "Microchip24AA02E.h" //Don't need this, can just use extEEPROM library
   #include <extEEPROM.h>
 #endif
 
+#ifdef HAS_FRAM_CHIP
+  #include <FRAM_MB85RC_I2C.h>
+#endif
 
 ////////////////////////////// Globals /////////////////////////////////////////////////
 
