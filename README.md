@@ -36,4 +36,4 @@ Additionally you will need to install some libraries to use the onboard hardware
 
 Examples are provided for LMIC and Beelan libraries. I hope to add a nice 
 example for RadioHead in the future, but I know the standard examples will
-work fine as long as you set the pin mappings. The JLogger_601_Test_All example shows the basics off using the onboard hardware and can be used to check that everything is working. It also can be configured to use the RadioHead library to check that an RFM95 (or RFM69) is present and working.
+work fine as long as you set the pin mappings. The JLogger_601_Test_All example shows the basics of using the onboard hardware and can be used to check that everything is working. It also can be configured to use the RadioHead library to check that an RFM95 (or RFM69) is present and working.
