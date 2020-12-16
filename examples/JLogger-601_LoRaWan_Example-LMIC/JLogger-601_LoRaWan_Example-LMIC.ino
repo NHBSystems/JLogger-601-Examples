@@ -58,8 +58,10 @@
 #include "NHB_AD7794.h"
 #include <extEEPROM.h>
 
-#define SERIAL_DEBUG
-#define dbgSerial Serial1
+//#define SERIAL_DEBUG
+#define dbgSerial Serial1  //Set which serial port to send info to. Using Serial1 with
+                           //an adapter allows port to be kept open through sleep cycles
+
 
 #define MCCI_LMIC                  //Comment out if using a classic LMiC such as
                                    //https://github.com/matthijskooijman/arduino-lmic)
@@ -109,8 +111,7 @@
    
   uint8_t devEUI[8]; ////Will fill this with EUI from 24AA025E64 chip in setup
   void os_getDevEui (u1_t* buf) { memcpy_P(buf, devEUI, 8);}
-  static const u1_t PROGMEM APPKEY[16] = {0x93,0xaa,0x30,0xad,0x90,0x36,0x4f,0xa8,0x18,0xd3,0x11,0xe7,0xd8,0x8e,0x9a,0xef}; //Chirpstack testing appkey
-  //static const u1_t PROGMEM APPKEY[16] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+  static const u1_t PROGMEM APPKEY[16] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
   void os_getDevKey (u1_t* buf) { memcpy_P(buf, APPKEY, 16);}
 #endif
 

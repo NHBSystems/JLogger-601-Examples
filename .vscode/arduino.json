@@ -1,5 +1,5 @@
 {
     "board": "JLogger 601:samd:jlogger_601",
     "sketch": "examples\\JLogger-601_LoRaWan_Example-LMIC\\JLogger-601_LoRaWan_Example-LMIC.ino",
-    "port": "COM20"
+    "port": "COM17"
 }
