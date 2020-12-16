@@ -16,7 +16,7 @@
                                 // Use this if an FM24CL04B FRAM IC has been installed on
                                 // the SOIC pad on the bottom of the board
 
-//#define HAS_RFM95_RADIO       // If you uncomment a radio option, you must have the Radiohead library installed.
+#define HAS_RFM95_RADIO       // If you uncomment a radio option, you must have the Radiohead library installed.
 //#define HAS_RFM69_RADIO
 #define RFM_FREQUENCY  915.00   // If testing radio, make sure this frequency is okay for your region
 
@@ -360,7 +360,7 @@ void loop() {
 
   digitalWrite(PIN_LED_TXL, HIGH); //Make sure TX led is off before going to sleep
   
-  //rtc.standbyMode();  // <-- This should work fine too
+  //rtc.standbyMode();  // <-- Still doesn't handle SysTick properly
   goToSleep();
   
   

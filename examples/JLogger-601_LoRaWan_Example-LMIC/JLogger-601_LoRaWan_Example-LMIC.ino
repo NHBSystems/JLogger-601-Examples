@@ -58,7 +58,8 @@
 #include "NHB_AD7794.h"
 #include <extEEPROM.h>
 
-//#define SERIAL_DEBUG
+#define SERIAL_DEBUG
+#define dbgSerial Serial1
 
 #define MCCI_LMIC                  //Comment out if using a classic LMiC such as
                                    //https://github.com/matthijskooijman/arduino-lmic)
@@ -108,8 +109,8 @@
    
   uint8_t devEUI[8]; ////Will fill this with EUI from 24AA025E64 chip in setup
   void os_getDevEui (u1_t* buf) { memcpy_P(buf, devEUI, 8);}
-  
-  static const u1_t PROGMEM APPKEY[16] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
+  static const u1_t PROGMEM APPKEY[16] = {0x93,0xaa,0x30,0xad,0x90,0x36,0x4f,0xa8,0x18,0xd3,0x11,0xe7,0xd8,0x8e,0x9a,0xef}; //Chirpstack testing appkey
+  //static const u1_t PROGMEM APPKEY[16] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
   void os_getDevKey (u1_t* buf) { memcpy_P(buf, APPKEY, 16);}
 #endif
 
@@ -156,9 +157,9 @@ void setup() {
     delay(2000);
 
     #ifdef SERIAL_DEBUG
-      while (! Serial);    
-      Serial.begin(9600);
-      Serial.println(F("Starting"));
+      //while (! dbgSerial);    
+      dbgSerial.begin(115200);
+      dbgSerial.println(F("Starting"));
     #endif
         
     analogReadResolution(12);
@@ -169,8 +170,8 @@ void setup() {
     uint8_t eepStatus = eep.begin(eep.twiClock400kHz);  
     if (eepStatus) {
       #ifdef SERIAL_DEBUG
-        Serial.print(F("extEEPROM.begin() failed, status = "));
-        Serial.println(eepStatus);
+        dbgSerial.print(F("extEEPROM.begin() failed, status = "));
+        dbgSerial.println(eepStatus);
       //while (1);
       #endif
     }
@@ -189,8 +190,8 @@ void setup() {
       }
       devEuiStr[16] = 0; //NULL Termination
     
-      Serial.print(F("devEUI: "));
-      Serial.println(devEuiStr);
+      dbgSerial.print(F("devEUI: "));
+      dbgSerial.println(devEuiStr);
     #endif
 
     reverseBytes(devEUI,EUI64_MAC_LENGTH);
@@ -250,38 +251,38 @@ void loop() {
 
 void onEvent (ev_t ev) {
     #ifdef SERIAL_DEBUG
-      Serial.print(os_getTime());
-      Serial.print(": ");
+      dbgSerial.print(os_getTime());
+      dbgSerial.print(": ");
     #endif
     switch(ev) {
         case EV_SCAN_TIMEOUT:
             #ifdef SERIAL_DEBUG
-              Serial.println(F("EV_SCAN_TIMEOUT"));
+              dbgSerial.println(F("EV_SCAN_TIMEOUT"));
             #endif
             break;
         case EV_BEACON_FOUND:
             #ifdef SERIAL_DEBUG
-              Serial.println(F("EV_BEACON_FOUND"));
+              dbgSerial.println(F("EV_BEACON_FOUND"));
             #endif
             break;
         case EV_BEACON_MISSED:
             #ifdef SERIAL_DEBUG
-              Serial.println(F("EV_BEACON_MISSED"));
+              dbgSerial.println(F("EV_BEACON_MISSED"));
             #endif
             break;
         case EV_BEACON_TRACKED:
             #ifdef SERIAL_DEBUG
-              Serial.println(F("EV_BEACON_TRACKED"));
+              dbgSerial.println(F("EV_BEACON_TRACKED"));
             #endif
             break;
         case EV_JOINING:
             #ifdef SERIAL_DEBUG
-              Serial.println(F("EV_JOINING"));
+              dbgSerial.println(F("EV_JOINING"));
             #endif
             break;
         case EV_JOINED:
             #ifdef SERIAL_DEBUG
-              Serial.println(F("EV_JOINED"));
+              dbgSerial.println(F("EV_JOINED"));
             
               #ifdef MCCI_LMIC
               //This wont work with [matthijskooijman/arduino-lmic] version
@@ -291,24 +292,24 @@ void onEvent (ev_t ev) {
                 u1_t nwkKey[16];
                 u1_t artKey[16];
                 LMIC_getSessionKeys(&netid, &devaddr, nwkKey, artKey);
-                Serial.print("netid: ");
-                Serial.println(netid, DEC);
-                Serial.print("devaddr: ");
-                Serial.println(devaddr, HEX);
-                Serial.print("artKey: ");
+                dbgSerial.print("netid: ");
+                dbgSerial.println(netid, DEC);
+                dbgSerial.print("devaddr: ");
+                dbgSerial.println(devaddr, HEX);
+                dbgSerial.print("artKey: ");
                 for (int i=0; i<sizeof(artKey); ++i) {
                   if (i != 0)
-                    Serial.print("-");
-                  Serial.print(artKey[i], HEX);
+                    dbgSerial.print("-");
+                  dbgSerial.print(artKey[i], HEX);
                 }
-                Serial.println("");
-                Serial.print("nwkKey: ");
+                dbgSerial.println("");
+                dbgSerial.print("nwkKey: ");
                 for (int i=0; i<sizeof(nwkKey); ++i) {
                         if (i != 0)
-                                Serial.print("-");
-                        Serial.print(nwkKey[i], HEX);
+                                dbgSerial.print("-");
+                        dbgSerial.print(nwkKey[i], HEX);
                 }
-                Serial.println("");
+                dbgSerial.println("");
               }            
               #endif
             #endif
@@ -321,7 +322,7 @@ void onEvent (ev_t ev) {
             break;        
         case EV_JOIN_FAILED:
             #ifdef SERIAL_DEBUG
-              Serial.println(F("EV_JOIN_FAILED"));
+              dbgSerial.println(F("EV_JOIN_FAILED"));
             #endif
             break;
         case EV_REJOIN_FAILED:
@@ -330,7 +331,7 @@ void onEvent (ev_t ev) {
             //function is never called. UPDATE: We end up here even whenever I turn ADR
             //off, even when link check is disabled -arghhh!            
             #ifdef SERIAL_DEBUG
-              Serial.println(F("EV_REJOIN_FAILED"));
+              dbgSerial.println(F("EV_REJOIN_FAILED"));
             #endif
 
             //For right now, just call do_send again and see what happens.
@@ -340,9 +341,9 @@ void onEvent (ev_t ev) {
             break;
         case EV_TXCOMPLETE:
             #ifdef SERIAL_DEBUG
-              Serial.println(F("EV_TXCOMPLETE (includes waiting for RX windows)"));
+              dbgSerial.println(F("EV_TXCOMPLETE (includes waiting for RX windows)"));
               if (LMIC.txrxFlags & TXRX_ACK)
-                Serial.println(F("Received ack"));
+                dbgSerial.println(F("Received ack"));
             #endif
 
             //digitalWrite(PIN_BLUE_LED,HIGH); //Just for debugging
@@ -350,9 +351,9 @@ void onEvent (ev_t ev) {
             //Check for a downlink
             if (LMIC.dataLen != 0) {
               #ifdef SERIAL_DEBUG
-                Serial.println(F("Received "));
-                Serial.println(LMIC.dataLen);
-                Serial.println(F(" bytes of payload"));
+                dbgSerial.println(F("Received "));
+                dbgSerial.println(LMIC.dataLen);
+                dbgSerial.println(F(" bytes of payload"));
               #endif
 
               uint8_t dlPort = 0;
@@ -370,10 +371,10 @@ void onEvent (ev_t ev) {
             nextAlarmMin = (nextAlarmMin + (sleepInterval / 60)) % 60;
           
             #ifdef SERIAL_DEBUG    
-              Serial.print("nextAlarmSec: ");
-              Serial.println(nextAlarmSec);
-              Serial.print("nextAlarmMin: ");
-              Serial.println(nextAlarmMin);
+              dbgSerial.print("nextAlarmSec: ");
+              dbgSerial.println(nextAlarmSec);
+              dbgSerial.print("nextAlarmMin: ");
+              dbgSerial.println(nextAlarmMin);
             #endif  
           
             if(sleepInterval <= 60){
@@ -391,20 +392,24 @@ void onEvent (ev_t ev) {
             digitalWrite(LED_BUILTIN,LOW); 
           
             #ifdef SERIAL_DEBUG              
-              Serial.println(F("Going to (Fake) sleep now"));
-              delay(sleepInterval * 1000);
-              //rtc.standbyMode(); 
-              Serial.println(F("Good morning!"));
-            #else 
-              // This needs to be more sophisticated, just wanted to show that you 
-              // can(and should) check if it's safe to go to sleep.
-              while(os_queryTimeCriticalJobs(ms2osticksRound(sleepInterval * 1000))){
-                //Do Something?
-                //yield(100);
-              }                
-              rtc.standbyMode(); 
-              adjust_millis_forward(sleepInterval * 1000);  //Fix millis() to account for time we slept - IMPORTANT!          
-            #endif           
+              dbgSerial.println(F("Going to sleep now"));
+              dbgSerial.flush();
+            #endif 
+
+            // This needs to be more sophisticated, just wanted to show that you 
+            // can(and should) check if it's safe to go to sleep.
+            while(os_queryTimeCriticalJobs(ms2osticksRound(sleepInterval * 1000))){
+              dbgSerial.println(F("Waiting for time criticle job"));              
+            }                
+            //rtc.standbyMode(); // <-- Doesn't handle SysTick properly     
+            goToSleep(); // Safe sleep function. Could probably also use ArduinoLowPower library
+
+            adjust_millis_forward(sleepInterval * 1000);  //Fix millis() to account for time we slept - IMPORTANT! 
+
+            #ifdef SERIAL_DEBUG
+            dbgSerial.println(F("Good morning!"));
+            #endif         
+                      
             
             digitalWrite(LED_BUILTIN,HIGH); //Waste of power, but this is just an example 
 
@@ -418,44 +423,44 @@ void onEvent (ev_t ev) {
                        
         case EV_LOST_TSYNC:
             #ifdef SERIAL_DEBUG
-              Serial.println(F("EV_LOST_TSYNC"));
+              dbgSerial.println(F("EV_LOST_TSYNC"));
             #endif
             break;
         case EV_RESET:
             #ifdef SERIAL_DEBUG
-              Serial.println(F("EV_RESET"));
+              dbgSerial.println(F("EV_RESET"));
             #endif
             break;
         case EV_RXCOMPLETE:
             //data received in ping slot
             //This is for Class B only 
             #ifdef SERIAL_DEBUG
-              Serial.println(F("EV_RXCOMPLETE"));
+              dbgSerial.println(F("EV_RXCOMPLETE"));
             #endif
             break;
         case EV_LINK_DEAD:
             #ifdef SERIAL_DEBUG
-              Serial.println(F("EV_LINK_DEAD"));
+              dbgSerial.println(F("EV_LINK_DEAD"));
             #endif
             break;
         case EV_LINK_ALIVE:
             #ifdef SERIAL_DEBUG
-              Serial.println(F("EV_LINK_ALIVE"));
+              dbgSerial.println(F("EV_LINK_ALIVE"));
             #endif
             break;
         
         #ifdef MCCI_LMIC
         case EV_TXSTART:
             #ifdef SERIAL_DEBUG
-              Serial.println(F("EV_TXSTART"));
+              dbgSerial.println(F("EV_TXSTART"));
             #endif
             break;
         #endif
         
         default:
             #ifdef SERIAL_DEBUG
-              Serial.print(F("Unknown event: "));
-              Serial.println((unsigned) ev);
+              dbgSerial.print(F("Unknown event: "));
+              dbgSerial.println((unsigned) ev);
             #endif
             break;
     }
@@ -468,7 +473,7 @@ void do_send(osjob_t* j){
     // Check if there is not a current TX/RX job running
     if (LMIC.opmode & OP_TXRXPEND) {
       #ifdef SERIAL_DEBUG
-        Serial.println(F("OP_TXRXPEND, not sending"));
+        dbgSerial.println(F("OP_TXRXPEND, not sending"));
       #endif
     } else {
         
@@ -513,7 +518,7 @@ void do_send(osjob_t* j){
         }  
 
         #ifdef SERIAL_DEBUG
-          Serial.println(F("Packet queued"));
+          dbgSerial.println(F("Packet queued"));
         #endif
     }
     // Next TX is scheduled after TX_COMPLETE event.
@@ -550,17 +555,17 @@ void parseDownlink(uint8_t port, uint8_t * buf, uint8_t len){
   
     //Debug info
     #ifdef SERIAL_DEBUG
-      Serial.print(F("Message received [ "));
-      Serial.print(F("port: "));
-      Serial.print(port);
-      Serial.print(F(" cmd: "));
-      Serial.print(message.cmd);
-      Serial.print(F(" Payload: "));
+      dbgSerial.print(F("Message received [ "));
+      dbgSerial.print(F("port: "));
+      dbgSerial.print(port);
+      dbgSerial.print(F(" cmd: "));
+      dbgSerial.print(message.cmd);
+      dbgSerial.print(F(" Payload: "));
       for(int i=0; i<len; i++){
-        Serial.print(message.payload[i],HEX);
-        Serial.print(' ');
+        dbgSerial.print(message.payload[i],HEX);
+        dbgSerial.print(' ');
       }
-      Serial.println(" ]");
+      dbgSerial.println(" ]");
     #endif
 
     //Just the one command for now, but more can be added easily    
@@ -576,8 +581,8 @@ void parseDownlink(uint8_t port, uint8_t * buf, uint8_t len){
       
   
       #ifdef SERIAL_DEBUG
-        Serial.print("arg1 = ");
-        Serial.println(arg1);
+        dbgSerial.print("arg1 = ");
+        dbgSerial.println(arg1);
       #endif
          
       if((arg1 >= MIN_INTERVAL) && (arg1 < MAX_INTERVAL)){
@@ -588,15 +593,15 @@ void parseDownlink(uint8_t port, uint8_t * buf, uint8_t len){
         nextAlarmMin = rtc.getMinutes();
         
         #ifdef SERIAL_DEBUG
-          Serial.print(F("Set inteval to "));
-          Serial.println(arg1);
+          dbgSerial.print(F("Set inteval to "));
+          dbgSerial.println(arg1);
         #endif
       }    
       
     }else{
       //Catch any undefined commands
       #ifdef SERIAL_DEBUG
-        Serial.println(F("Unknown command"));
+        dbgSerial.println(F("Unknown command"));
       #endif    
     }
   }
@@ -609,8 +614,8 @@ void parseDownlink(uint8_t port, uint8_t * buf, uint8_t len){
     arg1 =  buf[1] | buf[0] << 8 ;
 
     #ifdef SERIAL_DEBUG
-      Serial.print("arg1 = ");
-      Serial.println(arg1);
+      dbgSerial.print("arg1 = ");
+      dbgSerial.println(arg1);
     #endif
    
     //TODO: Set sleep interval here 
@@ -622,8 +627,8 @@ void parseDownlink(uint8_t port, uint8_t * buf, uint8_t len){
       nextAlarmMin = rtc.getMinutes();
       
       #ifdef SERIAL_DEBUG
-        Serial.print(F("Set inteval to "));
-        Serial.println(arg1);
+        dbgSerial.print(F("Set inteval to "));
+        dbgSerial.println(arg1);
       #endif
     }    
   }
@@ -635,9 +640,9 @@ void parseDownlink(uint8_t port, uint8_t * buf, uint8_t len){
     arg1 =  buf[1] | buf[0] << 8 ;
 
     #ifdef SERIAL_DEBUG
-      Serial.print(F("Turning LED on for "));
-      Serial.print(arg1);
-      Serial.println(F(" mS"));
+      dbgSerial.print(F("Turning LED on for "));
+      dbgSerial.print(arg1);
+      dbgSerial.println(F(" mS"));
     #endif
     
     digitalWrite(PIN_BLUE_LED,LOW);
@@ -657,10 +662,44 @@ void parseDownlink(uint8_t port, uint8_t * buf, uint8_t len){
       LMIC_setAdrMode(arg1);
 
     #ifdef SERIAL_DEBUG
-      Serial.print(F("Set ADR to "));
-      Serial.println(arg1);
+      dbgSerial.print(F("Set ADR to "));
+      dbgSerial.println(arg1);
     #endif
   }
+  
+}
+
+//Sleep function that handles the SysTick interrupt properly.
+//Issue Posted here: https://community.atmel.com/comment/2625116#comment-2625116
+//On 1-8-2019
+//This may need updating to get USB wakeup working right - not sure?
+void goToSleep(){
+  
+  bool restoreUSBDevice = false;
+
+  //Try to handle attached USB gracefully
+	if (SERIAL_PORT_USBVIRTUAL) {
+		USBDevice.standby();
+	} else {
+		USBDevice.detach();
+		restoreUSBDevice = true;
+	}
+
+  //Disable SysTick interupt
+  SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;
+
+  //Go to sleep
+  SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
+  __DSB();
+  __WFI();
+  //Code starts here after waking
+
+  //Reenable systick interrupt
+  SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk;
+ 
+  if (restoreUSBDevice) {
+		USBDevice.attach();
+	}
   
 }
 

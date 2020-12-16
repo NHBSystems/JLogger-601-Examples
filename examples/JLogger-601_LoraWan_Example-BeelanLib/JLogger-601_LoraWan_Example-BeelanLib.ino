@@ -285,8 +285,16 @@ void loop() {
     delay(sleepInterval * 1000);
     Serial.println(F("Good morning!"));
   #else
-    RFM_Sleep();
-    rtc.standbyMode();     
+    RFM_Sleep(); // Beelan library doesn't put the radio to sleep so do it manually
+
+    // RTCZero library still does not handle SysTick properly.
+    // Posted here:https://community.atmel.com/forum/samd21-samd21e16b-sporadically-locks-and-does-not-wake-standby-sleep-mode
+    // On 1-8-2019
+    
+    //rtc.standbyMode(); // <-- Doesn't handle SysTick properly 
+    
+    goToSleep(); // Safe sleep function. Could probably also use ArduinoLowPower library
+    
   #endif
   
   digitalWrite(LED_BUILTIN,HIGH); //Waste of power, but this is just an example 
@@ -412,6 +420,40 @@ float getBusVoltage(){
   return val;
 }
 
+//Sleep function that handles the SysTick interrupt properly.
+//Issue Posted here: https://community.atmel.com/comment/2625116#comment-2625116
+//On 1-8-2019
+//This may need updating to get USB wakeup working right - not sure?
+void goToSleep(){
+  
+  bool restoreUSBDevice = false;
+
+  //Try to handle attached USB gracefully
+	if (SERIAL_PORT_USBVIRTUAL) {
+		USBDevice.standby();
+	} else {
+		USBDevice.detach();
+		restoreUSBDevice = true;
+	}
+
+  //Disable SysTick interupt
+  SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;
+
+  //Go to sleep
+  SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
+  __DSB();
+  __WFI();
+  //Code starts here after waking
+
+  //Reenable systick interrupt
+  SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk;
+ 
+  if (restoreUSBDevice) {
+		USBDevice.attach();
+	}
+  
+}
+
 // RTC Alarm Match ISR
 void rtcAlarm(){
   //Do nothing for now
@@ -421,16 +463,11 @@ void rtcAlarm(){
 /***********************************************************************************
 Example Javascript Decode/Encode functions for Chirpstack. This will also work for
 TTN but you have to change the Decode signature slightly to Decoder(bytes, port)
-  
-From https://www.thethingsnetwork.org/forum/t/decode-float-sent-by-lopy-as-node/8757/2
-Based on https://stackoverflow.com/a/37471538 by Ilya Bursov
-
 ************************************************************************************
 
-
-
-//// Helper that converts incoming raw byte back to floats /////////////////////////////////////
-
+// Helper that converts incoming raw byte back to floats 
+// From https://www.thethingsnetwork.org/forum/t/decode-float-sent-by-lopy-as-node/8757/2
+// Based on https://stackoverflow.com/a/37471538 by Ilya Bursov
 function bytesToFloat(bytes) {
   // JavaScript bitwise operators yield a 32 bits integer, not a float.
   // Assume LSB (least significant byte first).
@@ -441,7 +478,7 @@ function bytesToFloat(bytes) {
   var f = sign * m * Math.pow(2, e - 150);
   return f;
   
-  // The “bias” value, which is documented 5 to be 127 for 32 bits single-precision 
+  // The “bias” value, which is documented to be 127 for 32 bits single-precision 
   // IEEE-754 floating point, has been replaced by 150 in m * Math.pow(2, e - 150). 
   // This is effectively m × 2-23 × 2e-127 a.k.a. (m / 223) × 2e-127, and is a nice 
   // optimization to get the 24th implicit leading bit in the “mantissa”.
