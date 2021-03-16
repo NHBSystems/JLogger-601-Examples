@@ -19,6 +19,7 @@
 #define HAS_RFM95_RADIO       // If you uncomment a radio option, you must have the Radiohead library installed.
 //#define HAS_RFM69_RADIO
 #define RFM_FREQUENCY  915.00   // If testing radio, make sure this frequency is okay for your region
+//#define RFM_FREQUENCY  868.00
 
 #define HAS_24AA025E64_CHIP     // Included on all boards now
 
