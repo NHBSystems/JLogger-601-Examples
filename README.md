@@ -7,6 +7,8 @@ This is the repo for example code for using the JLogger-601 LoRa data logger. Th
 
 *JLogger-601_LoRaWan_Example-LMIC* - This is example shows how to use the JLogger-601 with the MCCI Arduino-LMIC library. It is tested with version 3.2.0, which is fully LoRaWan compliant. It is based on the clasic LMIC example that you may have seen before, but includes (safely) sleeping and processing downlinks, among other things.
 
+*JLogger-601_TinyUSB_MSC* - Example of how to log to the onboard flash, and use the TinyUSB library to allow the flash to be mounted like a USB flash drive to retrieve the logged data.
+
 A detailed guide for the examples can be found [here](https://nhbsystems.com/jlogger-601-getting-started/#Example_Sketches)  
 
 If you have not already done so, you will need to install the board support package and required libraries before trying to run these examples.
